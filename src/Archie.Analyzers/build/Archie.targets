@@ -1,0 +1,13 @@
+<Project>
+  <!-- Targets, not props, so the project's own properties are set when this is evaluated. Design §4.5: the nearest archie.json wins. -->
+  <PropertyGroup>
+    <ArchieConfig Condition="'$(ArchieConfig)' == ''">$([MSBuild]::GetPathOfFileAbove('archie.json', '$(MSBuildProjectDirectory)'))</ArchieConfig>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ArchieEnabled)' != 'false' and '$(ArchieConfig)' != ''">
+    <AdditionalFiles Include="$(ArchieConfig)" />
+  </ItemGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="IsTestProject" />
+    <CompilerVisibleProperty Include="ArchieEnabled" />
+  </ItemGroup>
+</Project>

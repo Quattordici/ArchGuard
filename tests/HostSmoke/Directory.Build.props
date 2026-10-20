@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Consumes the packed Archie package the way a user does, in whatever SDK runs the build (run.sh). Deliberately does not import the
+    repository's Directory.Build.props: no central package management, no repository analyzers, just a plain project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Analyzer load failures are warnings by default and would pass unnoticed: the analyzer could not be loaded (CS8032/CS8033),
+         was compiled against a newer compiler than the host (CS9057), or threw (AD0001). -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS8032;CS8033;CS9057;AD0001</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Archie" Version="$(ArchieVersion)" PrivateAssets="all" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)smoke.globalconfig" />
+  </ItemGroup>
+</Project>

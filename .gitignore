@@ -426,3 +426,7 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Written by CI to pin the SDK the host smoke test runs on.
+tests/HostSmoke/global.json
+TestResults/
