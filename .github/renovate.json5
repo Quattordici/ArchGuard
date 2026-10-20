@@ -1,0 +1,39 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    // Actions stay pinned by SHA; Renovate rewrites the SHA and the "# vX" comment together.
+    'helpers:pinGitHubActionDigests',
+  ],
+  schedule: ['before 6am on monday'],
+  customManagers: [
+    {
+      // The Roslyn the tests run on is an MSBuild property (Directory.Packages.props) with a "renovate: depName" comment above it;
+      // RoslynFloor has none, so nothing ever raises the floor.
+      customType: 'regex',
+      managerFilePatterns: ['/^Directory\\.Packages\\.props$/'],
+      matchStrings: [
+        '<!-- renovate: depName=(?<depName>[^\\s]+) -->\\s*<\\w+Latest>(?<currentValue>[^<]+)</\\w+Latest>',
+      ],
+      datasourceTemplate: 'nuget',
+    },
+  ],
+  packageRules: [
+    {
+      groupName: 'nuget minor and patch',
+      matchDatasources: ['nuget'],
+      matchUpdateTypes: ['minor', 'patch'],
+    },
+    {
+      groupName: 'actions',
+      matchManagers: ['github-actions'],
+    },
+    {
+      // Roslyn is the compile-time floor of the analyzer (it sets the oldest SDK, VS and Rider that can load Archie) and is raised
+      // by hand only when the code needs a newer API; the version the tests run on belongs to the custom manager above.
+      matchManagers: ['nuget'],
+      matchDepNames: ['Microsoft.CodeAnalysis.CSharp', 'Microsoft.CodeAnalysis.CSharp.Workspaces'],
+      enabled: false,
+    },
+  ],
+}

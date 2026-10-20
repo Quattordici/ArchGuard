@@ -1,0 +1,38 @@
+# Contributing to Archie
+
+Contributions are welcome through pull requests from forks.
+
+## How to contribute
+
+1. **Open an issue first** for anything beyond a small fix, so we can agree on the approach before you spend time on it.
+2. **Fork** the repository and create a branch from `main`.
+3. Make your change, with tests where it makes sense.
+4. Open a **pull request** against `main`.
+
+## Building and testing
+
+```bash
+dotnet build -c Release
+dotnet test -c Release --no-build                  # tests on the newest Roslyn
+dotnet test -c Release -p:TestAgainstFloors=true   # the same tests on Roslyn 4.8, the oldest compiler Archie supports
+```
+
+The analyzer targets `netstandard2.0` and compiles against Roslyn 4.8, so it loads in the .NET 8 SDK and Visual Studio 17.8 and later.
+CI also packs the package and builds a plain project with it on the .NET 8.0.1xx SDK (Roslyn 4.8) and the current SDK
+(`tests/HostSmoke/run.sh`), which fails if the analyzer can't be loaded or doesn't run.
+
+## Pull request expectations
+
+- Keep pull requests focused; unrelated changes belong in separate PRs.
+- All CI checks must pass.
+- Pull requests are **squash-merged**, so the PR title becomes the commit message. Please make it clear and descriptive.
+
+## About CI on pull requests
+
+CI workflows on pull requests from forks do not start automatically. A maintainer approves the run first, and changes to
+workflow files, project files (`*.csproj`, `Directory.Build.*`, `*.targets`) and `tests/HostSmoke` are reviewed with extra care
+since they execute during the build.
+
+## Reporting security issues
+
+Please do not use public issues for security problems. See [SECURITY.md](SECURITY.md).

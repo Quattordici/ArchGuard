@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Roslyn: the analyzer compiles against RoslynFloor, the oldest compiler that must load it (4.8 = .NET 8.0.1xx SDK, VS 17.8). Raising it drops
+    every older SDK/IDE, so it is raised by hand only when the code needs a newer API. Hosts differ in what they hand the analyzer (5.x exposes
+    attributes as operation blocks, 4.8 doesn't; see the phase 0 findings), so the tests run on RoslynLatest by default and on the floor with
+    -p:TestAgainstFloors=true (the "roslyn-floor" CI job). Renovate (.github/renovate.json5) never touches the floor; it updates RoslynLatest
+    through the "renovate: depName" comment above it.
+  -->
+  <PropertyGroup>
+    <RoslynFloor>4.8.0</RoslynFloor>
+    <!-- renovate: depName=Microsoft.CodeAnalysis.CSharp -->
+    <RoslynLatest>5.9.0</RoslynLatest>
+
+    <RoslynTestVersion>$(RoslynLatest)</RoslynTestVersion>
+    <RoslynTestVersion Condition="'$(TestAgainstFloors)' == 'true'">$(RoslynFloor)</RoslynTestVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynFloor)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynTestVersion)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
+    <!-- Brought in by Microsoft.CodeAnalysis.Analyzer.Testing (via NuGet.Packaging) at 9.0.6, which has advisories; NuGet audit fails the build. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="TUnit" Version="1.75.0" />
+  </ItemGroup>
+</Project>
