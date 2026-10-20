@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_usernames:
+      - renovate[bot]
+      - github-actions[bot]
+  path_instructions:
+    - path: "src/**/*.cs"
+      instructions: |
+        Targets netstandard2.0 and is loaded into the compiler (csc, Visual Studio on .NET Framework, Rider), so it
+        must compile against Microsoft.CodeAnalysis.CSharp 4.8 and must not take runtime dependencies such as
+        System.Text.Json. Analyzers must not call Compilation.GetSemanticModel (RS1030). Per-compilation and
+        per-symbol paths are hot: avoid allocations and repeated string work, and skip early when a type has no layer.
+        New diagnostics must be registered in AnalyzerReleases.Unshipped.md.
+    - path: "src/Archie.Analyzers/build/*.targets"
+      instructions: |
+        Runs in every project that installs Archie. Must stay cheap at evaluation time and must not change the
+        consuming project's build beyond adding archie.json and the CompilerVisibleProperty items.
+    - path: "tests/**/*.cs"
+      instructions: |
+        Tests use TUnit, Shouldly and Microsoft.CodeAnalysis.Testing, and run on both Roslyn 4.8 and the newest
+        Roslyn. New behaviour needs a test that would fail without it, in both directions (flagged and not flagged).
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "CONTRIBUTING.md"
+
+chat:
+  auto_reply: true
