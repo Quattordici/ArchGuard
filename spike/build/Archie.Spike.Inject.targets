@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Adds the spike analyzer to any project without editing it:
+      dotnet build X.sln -p:CustomAfterMicrosoftCommonTargets=/abs/path/Archie.Spike.Inject.targets -p:ArchieSpikeMode=block
+    ArchieSpikeMode: off | noop | block | operation | syntax (off = analyzer not referenced).
+    ArchieSpikeFrom / ArchieSpikeTo: semicolon lists of namespace segments.
+  -->
+  <PropertyGroup>
+    <ArchieSpikeMode Condition="'$(ArchieSpikeMode)' == ''">block</ArchieSpikeMode>
+    <ArchieSpikeAnalyzerPath Condition="'$(ArchieSpikeAnalyzerPath)' == ''">$(MSBuildThisFileDirectory)../src/Archie.Spike.Analyzers/bin/Release/netstandard2.0/Archie.Spike.Analyzers.dll</ArchieSpikeAnalyzerPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ArchieSpikeMode)' != 'off' and '$(Language)' == 'C#'">
+    <Analyzer Include="$(ArchieSpikeAnalyzerPath)" />
+    <CompilerVisibleProperty Include="ArchieSpikeMode" />
+    <CompilerVisibleProperty Include="ArchieSpikeFrom" />
+    <CompilerVisibleProperty Include="ArchieSpikeTo" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Archie.Spike.Analyzers/Archie.Spike.Analyzers.csproj" />
+  <Project Path="src/Archie.Spike.Bench/Archie.Spike.Bench.csproj" />
+</Solution>
