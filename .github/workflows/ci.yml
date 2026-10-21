@@ -88,6 +88,15 @@ jobs:
             grep -qx "$file" <<< "$contents" || { echo "::error::The Archie package has no $file."; exit 1; }
           done
           if grep -q '^lib/' <<< "$contents"; then echo "::error::The Archie package has a lib/ folder."; exit 1; fi
+          # A version on nuget.org can be unlisted but never deleted or replaced, so the metadata it is shown with is checked before every push.
+          nuspec=$(unzip -p "artifacts/packages/Archie.$VERSION.nupkg" Archie.nuspec)
+          for expected in '<id>Archie</id>' '<license type="expression">MIT</license>' '<readme>README.md</readme>' \
+            '<projectUrl>https://github.com/Quattordici/Archie</projectUrl>' '<developmentDependency>true</developmentDependency>' \
+            '<repository type="git" url="https://github.com/Quattordici/Archie"'; do
+            grep -qF "$expected" <<< "$nuspec" || { echo "::error::Archie.nuspec has no $expected."; exit 1; }
+          done
+          grep -qE '<description>.+</description>' <<< "$nuspec" || { echo "::error::Archie.nuspec has no description."; exit 1; }
+          grep -qx README.md <<< "$contents" || { echo "::error::The Archie package has no README.md."; exit 1; }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: packages
@@ -186,7 +195,7 @@ jobs:
 
   # Trusted publishing (https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): GitHub issues an OIDC
   # token that nuget.org exchanges for a one-hour API key, so no long-lived key is stored. The nuget.org policy
-  # must name owner Quattordici, repository Archie, workflow file ci.yml and environment nuget.
+  # must name owner Quattordici, repository Archie, workflow file ci.yml and environment nuget. The release steps are in CONTRIBUTING.md.
   publish:
     name: Publish to NuGet
     if: startsWith(github.ref, 'refs/tags/v')

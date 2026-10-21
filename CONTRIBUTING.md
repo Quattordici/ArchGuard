@@ -33,6 +33,22 @@ CI workflows on pull requests from forks do not start automatically. A maintaine
 workflow files, project files (`*.csproj`, `Directory.Build.*`, `*.targets`) and `tests/HostSmoke` are reviewed with extra care
 since they execute during the build.
 
+## Releasing (maintainers)
+
+A tag `v<version>` on a commit on `main` packs the `Archie` package with that version and, after all CI jobs pass, pushes it to
+nuget.org through [trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (no stored API key):
+
+```bash
+git tag v0.0.1-alpha.1 && git push origin v0.0.1-alpha.1
+```
+
+- Use SemVer 2 pre-release labels with a number (`-alpha.1`, `-alpha.2`) so versions sort correctly; anything without a label is a stable release.
+- A pushed version can be unlisted but never deleted, replaced or reused. Metadata (description, readme, icon) belongs to the version and can
+  only be changed by pushing a new one. The pack job checks the licence, readme and repository metadata before anything is pushed.
+- The push job runs in the GitHub environment `nuget` (give it a required reviewer and limit it to `v*` tags) and needs the secret
+  `NUGET_USER` (the nuget.org profile name) and a trusted publishing policy on nuget.org for owner `Quattordici`, repository `Archie`,
+  workflow `ci.yml`, environment `nuget`.
+
 ## Reporting security issues
 
 Please do not use public issues for security problems. See [SECURITY.md](SECURITY.md).
