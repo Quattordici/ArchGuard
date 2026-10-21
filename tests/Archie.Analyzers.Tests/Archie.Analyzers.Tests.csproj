@@ -20,10 +20,19 @@
       <_Parameter1>RoslynTestVersion</_Parameter1>
       <_Parameter2>$(RoslynTestVersion)</_Parameter2>
     </AssemblyAttribute>
+    <!-- What the analyzer compiles against: OwnArchitectureTests compiles src/ the same way. -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RoslynFloor</_Parameter1>
+      <_Parameter2>$(RoslynFloor)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" LinkBase="Shared" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,5 @@
+// Chosen with <ArchieConfig> in CustomConfig.csproj. Same rules as WithConfig/archie.json, for the same Order.cs.
+{
+  "rootNamespace": "App.WithConfig",
+  "layers": ["Infrastructure", "Domain"],
+}

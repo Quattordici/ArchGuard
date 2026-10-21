@@ -18,9 +18,9 @@ public static partial class ConfigParser
     /// <summary>A value that is not valid: wrong type, bad namespace pattern, unknown or duplicate layer, two layers matching equally well.</summary>
     public const string InvalidValue = "ARCH902";
 
-    private static readonly string[] TopLevelKeys = ["$schema", "rootNamespace", "layers", "mustNotDependOn", "exclude", "checkTestProjects", "conventions"];
-    private static readonly string[] ListItemKeys = ["name", "namespaces", "mustNotDependOn"];
-    private static readonly string[] MapItemKeys = ["namespaces", "mayDependOn", "mustNotDependOn"];
+    internal static readonly string[] TopLevelKeys = ["$schema", "rootNamespace", "layers", "mustNotDependOn", "exclude", "checkTestProjects", "conventions"];
+    internal static readonly string[] ListItemKeys = ["name", "namespaces", "mustNotDependOn"];
+    internal static readonly string[] MapItemKeys = ["namespaces", "mayDependOn", "mustNotDependOn"];
 
     /// <summary>Parses <paramref name="text"/>. Never throws for any input.</summary>
     public static ConfigResult Parse(string text)

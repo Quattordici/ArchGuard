@@ -28,7 +28,8 @@ internal static class Locations
             }
         }
 
-        return root.GetLocation();
+        // `DbAlias?`: the alias without the `?`.
+        return (root is NullableTypeSyntax nullable ? nullable.ElementType : root).GetLocation();
     }
 
     /// <summary>The member name of <c>a.b.Name</c> or <c>Name</c>: where an access or call is squiggled.</summary>
