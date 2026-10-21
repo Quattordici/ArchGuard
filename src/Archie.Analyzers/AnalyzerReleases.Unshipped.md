@@ -15,4 +15,3 @@ ARCH105 | Archie | Error | ArchitectureAnalyzer, type's kind or modifiers break 
 ARCH900 | Archie | Error | ArchitectureAnalyzer, archie.json could not be read
 ARCH901 | Archie | Error | ArchitectureAnalyzer, unknown or unsupported key in archie.json
 ARCH902 | Archie | Error | ArchitectureAnalyzer, invalid value in archie.json
-ARCH909 | Archie | Info | ArchitectureAnalyzer, no archie.json found

@@ -1,14 +1,15 @@
 # Archie
 Architecture rules for .NET, enforced at compile time. Roslyn analyzers turn layering and dependency violations into build errors and IDE diagnostics with exact file and line.
 
-> **Status: early development.** `0.0.1` on NuGet only reports ARCH909 (no `archie.json` found). The layer rules below are in the next release.
+> **Status: early development.** `0.1.0-alpha.1` is the first release with the layer rules and conventions; feedback is welcome in the
+> issues. (`0.0.1` only reports ARCH909.)
 
 ## Getting started
 
 ```xml
 <!-- Directory.Build.props -->
 <ItemGroup>
-  <PackageReference Include="Archie" Version="0.1.0" PrivateAssets="all" />
+  <PackageReference Include="Archie" Version="0.1.0-alpha.1" PrivateAssets="all" />
 </ItemGroup>
 ```
 
@@ -80,7 +81,8 @@ event, parameter, return and explicitly typed local variable types (through arra
 constraints and written type arguments; attributes and their `typeof`/enum arguments; `new`, calls (an extension method counts as its static
 class), member access, `typeof`, casts, `is`/`as`, patterns and `catch`.
 
-Not counted: `using` directives, `nameof`, XML doc `cref`, types only inferred by `var`, and transitive dependencies (A uses B uses C). Each
+Not counted: `using` directives, `nameof`, XML doc `cref`, types only inferred by `var`, constants in attribute arguments
+(`[MaxLength(Db.MaxSize)]`: the compiled attribute only keeps the value), and transitive dependencies (A uses B uses C). Each
 place is its own diagnostic, reported on the type or member name.
 
 ## Conventions
