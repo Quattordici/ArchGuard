@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Archie.Analyzers;
 
-/// <summary>Reports architecture rule violations (ARCH001, ARCH002) and problems with archie.json (ARCH900–ARCH909).</summary>
+/// <summary>Reports architecture rule violations (ARCH001, ARCH002), convention violations (ARCH101–ARCH105) and problems with archie.json (ARCH900–ARCH909).</summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
 {
@@ -19,6 +19,11 @@ public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
         Diagnostics.LayerDependency,
         Diagnostics.ForbiddenNamespace,
+        Diagnostics.Naming,
+        Diagnostics.Placement,
+        Diagnostics.Inheritance,
+        Diagnostics.Attribute,
+        Diagnostics.KindAndModifiers,
         Diagnostics.Unreadable,
         Diagnostics.UnknownKey,
         Diagnostics.InvalidValue,
@@ -68,6 +73,17 @@ public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
         if (entry.Evaluator is null)
         {
             return; // a config that is not fully understood checks nothing; ARCH9xx says why
+        }
+
+        if (entry.Conventions is { } conventions)
+        {
+            var namespaces = new NamespaceNames();
+            context.RegisterSymbolAction(symbol => ConventionRules.Analyze(symbol, conventions, namespaces), SymbolKind.NamedType);
+        }
+
+        if (entry.Evaluator.Model.Layers.Count == 0)
+        {
+            return; // conventions only
         }
 
         var checker = new DependencyChecker(entry.Evaluator);

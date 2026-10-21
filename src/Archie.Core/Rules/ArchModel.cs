@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Archie.Core.Conventions;
 
 namespace Archie.Core.Rules;
 
@@ -7,8 +8,10 @@ public sealed class ArchModel
 {
     private readonly bool[] _allowed;
 
-    internal ArchModel(string? rootNamespace, IReadOnlyList<Layer> layers, IReadOnlyList<NamespacePattern> exclude, bool checkTestProjects)
+    internal ArchModel(string? rootNamespace, IReadOnlyList<Layer> layers, IReadOnlyList<NamespacePattern> exclude, bool checkTestProjects,
+        IReadOnlyList<Convention> conventions)
     {
+        Conventions = conventions;
         RootNamespace = rootNamespace;
         Layers = layers;
         Exclude = exclude;
@@ -37,6 +40,9 @@ public sealed class ArchModel
 
     /// <summary><c>checkTestProjects</c>: test projects (<c>IsTestProject</c>) are skipped unless this is set.</summary>
     public bool CheckTestProjects { get; }
+
+    /// <summary>The conventions (naming, placement, inheritance, attributes, kind and modifiers) in config order. May be empty.</summary>
+    public IReadOnlyList<Convention> Conventions { get; }
 
     /// <summary>Whether code in layer <paramref name="from"/> may depend on layer <paramref name="to"/>; a layer may always depend on itself.</summary>
     public bool MayDependOn(int from, int to) => _allowed[(from * Layers.Count) + to];

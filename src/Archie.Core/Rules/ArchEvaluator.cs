@@ -87,7 +87,7 @@ public sealed class ArchEvaluator
             }
         }
 
-        return new NamespaceInfo(@namespace, layer, AnyMatches(Model.Exclude, segments), forbiddenFor);
+        return new NamespaceInfo(@namespace, segments, layer, AnyMatches(Model.Exclude, segments), forbiddenFor);
     }
 
     private static bool AnyMatches(IReadOnlyList<NamespacePattern> patterns, string[] segments)

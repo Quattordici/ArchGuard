@@ -7,7 +7,7 @@ using Archie.Core.Rules;
 namespace Archie.Core.Config;
 
 /// <summary>Reads archie.json (JSON with comments) into an <see cref="ArchModel"/>. Design: v1-design §4.</summary>
-public static class ConfigParser
+public static partial class ConfigParser
 {
     /// <summary>The file could not be read: JSON syntax, duplicate keys, not an object, more than one config file.</summary>
     public const string Unreadable = "ARCH900";
@@ -18,7 +18,7 @@ public static class ConfigParser
     /// <summary>A value that is not valid: wrong type, bad namespace pattern, unknown or duplicate layer, two layers matching equally well.</summary>
     public const string InvalidValue = "ARCH902";
 
-    private static readonly string[] TopLevelKeys = ["$schema", "rootNamespace", "layers", "mustNotDependOn", "exclude", "checkTestProjects"];
+    private static readonly string[] TopLevelKeys = ["$schema", "rootNamespace", "layers", "mustNotDependOn", "exclude", "checkTestProjects", "conventions"];
     private static readonly string[] ListItemKeys = ["name", "namespaces", "mustNotDependOn"];
     private static readonly string[] MapItemKeys = ["namespaces", "mayDependOn", "mustNotDependOn"];
 
@@ -52,7 +52,7 @@ public static class ConfigParser
         public List<NamespacePattern> MustNotDependOn { get; } = [];
     }
 
-    private sealed class Reader(string text)
+    private sealed partial class Reader(string text)
     {
         private readonly string _text = text;
         private readonly List<LayerDraft> _layers = [];
@@ -83,6 +83,7 @@ public static class ConfigParser
 
             JsonProperty? layers = null;
             JsonProperty? mustNotDependOn = null;
+            JsonProperty? conventions = null;
             var exclude = new List<NamespacePattern>();
             var checkTestProjects = false;
             foreach (var property in top.Properties)
@@ -116,7 +117,7 @@ public static class ConfigParser
 
                         break;
                     case "conventions":
-                        Error(UnknownKey, "'conventions' is not supported until Archie 1.x. Remove it; v1 checks layer dependencies only.", property);
+                        conventions = property;
                         break;
                     default:
                         UnknownKeyError(property, "at the top level", TopLevelKeys);
@@ -124,8 +125,9 @@ public static class ConfigParser
                 }
             }
 
-            // The layers come first: rootNamespace may follow them in the file, and mustNotDependOn names them.
-            if (layers is null)
+            // The layers come first: rootNamespace may follow them in the file, and mustNotDependOn and conventions name them. A config with
+            // only conventions has no layers.
+            if (layers is null && conventions is null)
             {
                 Error(InvalidValue,
                     "archie.json defines no layers. Add, for example, \"rootNamespace\": \"MyApp\" and \"layers\": [\"Api\", \"Infrastructure\", \"Application\", \"Domain\"].",
@@ -133,7 +135,11 @@ public static class ConfigParser
                 return null;
             }
 
-            ReadLayers(layers.Value);
+            if (layers is not null)
+            {
+                ReadLayers(layers.Value);
+            }
+
             if (mustNotDependOn is not null)
             {
                 ReadTopLevelMustNotDependOn(mustNotDependOn.Value);
@@ -141,6 +147,7 @@ public static class ConfigParser
 
             var mayDependOn = ResolveMayDependOn();
             CheckAmbiguousNamespaces();
+            var readConventions = conventions is null ? [] : ReadConventions(conventions.Value);
             if (Errors.Count > 0)
             {
                 return null;
@@ -153,7 +160,7 @@ public static class ConfigParser
                 built[i] = new Layer(i, draft.Name, draft.Namespaces.Select(n => n.Pattern).ToArray(), mayDependOn[i], draft.MustNotDependOn.ToArray());
             }
 
-            return new ArchModel(_rootNamespace, built, exclude.ToArray(), checkTestProjects);
+            return new ArchModel(_rootNamespace, built, exclude.ToArray(), checkTestProjects, readConventions);
         }
 
         private void ReadRootNamespace(JsonNode node)

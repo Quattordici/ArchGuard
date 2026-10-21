@@ -1,0 +1,15 @@
+{
+  "rootNamespace": "App",
+  "layers": ["Api", "Infrastructure", "Application", "Domain"],
+  "exclude": ["App.Domain.Legacy"],
+  "conventions": [
+    { "name": "Handlers", "types": { "inherit": "IRequestHandler<,>" }, "mustBeNamed": "*Handler", "mustBeIn": "Application" },
+    { "name": "Repositories", "types": { "named": "*Repository", "are": "interface" }, "mustBeIn": "Domain" },
+    { "name": "NoManagers", "mustNotBeNamed": ["*Manager", "*Helper"] },
+    { "name": "DomainEvents", "types": { "inherit": "App.Domain.IDomainEvent", "areNot": "interface" }, "mustBe": ["sealed", "record"] },
+    { "name": "PersistenceIgnorance", "types": { "in": "Domain" }, "mustNotInherit": "Vendor.Orm.DbContext" },
+    { "name": "Controllers", "types": { "in": "Api", "named": "*Controller" }, "mustInherit": "ControllerBase", "mustHaveAttribute": "ApiController" },
+    { "types": { "haveAttribute": "System.Obsolete" }, "mustNotBeIn": "App.Api.**" },
+    { "name": "InternalInfrastructure", "types": { "in": "Infrastructure", "are": "class" }, "mustNotBe": "public" },
+  ],
+}

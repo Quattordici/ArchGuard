@@ -7,3 +7,6 @@ dotnet_diagnostic.ARCH909.severity = warning
 # ARCH001 is an error by default; as a warning the build succeeds and the log shows it, which proves the rules ran in this host (including
 # loading Archie.Core.dll next to the analyzer).
 dotnet_diagnostic.ARCH001.severity = warning
+
+# Likewise for the convention in WithConfig/archie.json.
+dotnet_diagnostic.ARCH105.severity = warning

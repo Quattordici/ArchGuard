@@ -9,26 +9,34 @@ using Microsoft.CodeAnalysis.Text;
 namespace Archie.Analyzers.Tests;
 
 /// <summary>
-/// Runs every case of tests/Corpus/Dependencies through the analyzer and compares the violations with the expectations written in the case
-/// (tests/Corpus/README.md). The corpus is data so the Phase 4 metadata backend can run the same cases.
+/// Runs every case of the corpora in tests/Corpus (Dependencies, Conventions) through the analyzer and compares the violations with the
+/// expectations written in the case (tests/Corpus/README.md). The corpus is data so the Phase 4 metadata backend can run the same cases.
 /// </summary>
-public partial class DependencyCorpusTests
+public partial class CorpusTests
 {
-    private static readonly string Folder = Path.Combine(AppContext.BaseDirectory, "Corpus", "Dependencies");
+    private static readonly string Root = Path.Combine(AppContext.BaseDirectory, "Corpus");
 
+    private static readonly string[] Corpora = ["Dependencies", "Conventions"];
+
+    /// <summary><c>Dependencies/BaseTypes.cs</c>: corpus and case.</summary>
     public static IEnumerable<string> Cases() =>
-        Directory.GetFiles(Folder, "*.cs").Select(Path.GetFileName).Where(name => !name!.StartsWith('_')).Order(StringComparer.Ordinal)!;
+        Corpora.SelectMany(corpus => Directory.GetFiles(Path.Combine(Root, corpus), "*.cs")
+            .Select(Path.GetFileName)
+            .Where(name => !name!.StartsWith('_'))
+            .Order(StringComparer.Ordinal)
+            .Select(name => corpus + "/" + name));
 
     [Test]
     [MethodDataSource(nameof(Cases))]
-    public async Task Case_produces_exactly_its_expected_violations(string file)
+    public async Task Case_produces_exactly_its_expected_violations(string @case)
     {
-        var shared = Directory.GetFiles(Folder, "_*.cs").Order(StringComparer.Ordinal);
-        var sources = shared.Append(Path.Combine(Folder, file)).Select(path => (Path: path, Text: File.ReadAllText(path))).ToArray();
+        var folder = Path.Combine(Root, Path.GetDirectoryName(@case)!);
+        var shared = Directory.GetFiles(folder, "_*.cs").Order(StringComparer.Ordinal);
+        var sources = shared.Append(Path.Combine(folder, Path.GetFileName(@case))).Select(path => (Path: path, Text: File.ReadAllText(path))).ToArray();
 
         var diagnostics = await AnalyzerRunner.RunAsync(
             sources,
-            [("/solution/archie.json", await File.ReadAllTextAsync(Path.Combine(Folder, "archie.json")))]);
+            [("/solution/archie.json", await File.ReadAllTextAsync(Path.Combine(folder, "archie.json")))]);
 
         var actual = diagnostics.Select(Describe).Order(StringComparer.Ordinal).ToArray();
         var expected = sources.SelectMany(source => Expectations(source.Path, source.Text)).Order(StringComparer.Ordinal).ToArray();
@@ -36,7 +44,9 @@ public partial class DependencyCorpusTests
     }
 
     [Test]
-    public void The_corpus_has_cases() => Cases().Count().ShouldBeGreaterThan(5);
+    [Arguments("Dependencies")]
+    [Arguments("Conventions")]
+    public void The_corpus_has_cases(string corpus) => Cases().Count(c => c.StartsWith(corpus + "/", StringComparison.Ordinal)).ShouldBeGreaterThan(4);
 
     private static string Describe(Diagnostic diagnostic)
     {
