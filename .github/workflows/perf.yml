@@ -1,0 +1,40 @@
+name: Performance
+
+# The Phase 0 budget (design §9) on the real analyzer, weekly and on demand. Never on pull requests: timing on shared runners is too noisy to
+# block a merge, so a red run here is a signal to look at the numbers in the run summary, not a broken build.
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Mondays, 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  budget:
+    name: Budget (synthetic 114k lines)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet pack src/Archie.Analyzers -c Release -o artifacts/packages -p:Version=0.0.0-perf
+      # Allocations over a baseline that forces operation trees, per-document time (the IDE proxy), in process.
+      - name: In process
+        run: |
+          set -o pipefail
+          dotnet run -c Release --project benchmarks/Archie.Benchmarks -- --budget | tee -a "$GITHUB_STEP_SUMMARY"
+      # Archie's time in -p:ReportAnalyzer=true against csc's wall time, as Phase 0 measured it.
+      - name: Real build
+        if: always()
+        run: |
+          set -o pipefail
+          benchmarks/build-budget.sh 0.0.0-perf artifacts/packages | tee -a "$GITHUB_STEP_SUMMARY"

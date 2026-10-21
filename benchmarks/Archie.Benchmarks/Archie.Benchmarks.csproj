@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Measures the analyzer against the Phase 0 budget (5% of compile time, 50 MB per 100k lines). Run by .github/workflows/perf.yml. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <!-- OperationTreeAnalyzer is a measuring baseline run in process, never loaded by a compiler. -->
+    <NoWarn>$(NoWarn);RS1036;RS1041;RS2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Hosted on the newest Roslyn, like the current SDK; the analyzer itself is compiled against the floor. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="$(RoslynTestVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Archie.Analyzers/Archie.Analyzers.csproj" />
+  </ItemGroup>
+</Project>

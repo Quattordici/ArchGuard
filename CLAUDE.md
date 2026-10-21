@@ -10,9 +10,11 @@ dotnet test -c Release                                   # TUnit + Shouldly + Mi
 dotnet test -c Release -p:TestAgainstFloors=true         # the same tests on Roslyn 4.8
 dotnet pack src/Archie.Analyzers -c Release -o artifacts/packages -p:Version=0.0.0-smoke
 tests/HostSmoke/run.sh 0.0.0-smoke artifacts/packages    # the package in a plain project, built by the active SDK's compiler
+dotnet run -c Release --project benchmarks/Archie.Benchmarks -- --budget   # allocations and per-document time on 114k synthetic lines
+benchmarks/build-budget.sh 0.0.0-smoke artifacts/packages            # Archie's share of csc time in a real build (budget 5%)
 ```
 
-To run the host smoke test on another SDK, put a `global.json` in `tests/HostSmoke/` (ignored by git; CI writes one per host).
+`.github/workflows/perf.yml` runs both benchmarks weekly (never on pull requests, timing on shared runners is too noisy to gate). To run the host smoke test on another SDK, put a `global.json` in `tests/HostSmoke/` (ignored by git; CI writes one per host).
 
 ## Constraints
 

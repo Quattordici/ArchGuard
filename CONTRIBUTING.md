@@ -21,6 +21,18 @@ The analyzer targets `netstandard2.0` and compiles against Roslyn 4.8, so it loa
 CI also packs the package and builds a plain project with it on the .NET 8.0.1xx SDK (Roslyn 4.8) and the current SDK
 (`tests/HostSmoke/run.sh`), which fails if the analyzer can't be loaded or doesn't run.
 
+## Performance
+
+The analyzer runs on every keystroke in the IDE and in every build, so it has a budget (from the Phase 0 spike): at most 5% of csc's
+time and 50 MB of allocations per 100k lines. The weekly `Performance` workflow measures both on a synthetic 114k-line project; run them
+locally before and after a change to a hot path:
+
+```bash
+dotnet run -c Release --project benchmarks/Archie.Benchmarks             # allocations and per-document time, in process
+dotnet pack src/Archie.Analyzers -c Release -o artifacts/packages -p:Version=0.0.0-smoke
+benchmarks/build-budget.sh 0.0.0-smoke artifacts/packages                # Archie's share of csc time in a real build
+```
+
 ## Pull request expectations
 
 - Keep pull requests focused; unrelated changes belong in separate PRs.
