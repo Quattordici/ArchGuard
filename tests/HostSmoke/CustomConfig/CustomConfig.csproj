@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Not named archie.json: build/Archie.targets marks the file it passes, so the analyzer finds it anyway. -->
+    <ArchieConfig>$(MSBuildProjectDirectory)/rules/architecture.jsonc</ArchieConfig>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../WithConfig/Order.cs" />
+  </ItemGroup>
+</Project>

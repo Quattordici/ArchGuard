@@ -89,14 +89,15 @@ internal static class AnalyzerRunner
         new(() => ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, CancellationToken.None));
 
     public static async Task<ImmutableArray<Diagnostic>> RunAsync(IEnumerable<(string Path, string Text)> sources,
-        IEnumerable<(string Path, string Text)> additionalFiles, IReadOnlyDictionary<string, string>? buildProperties = null)
+        IEnumerable<(string Path, string Text)> additionalFiles, IReadOnlyDictionary<string, string>? buildProperties = null,
+        IEnumerable<MetadataReference>? references = null)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Latest, DocumentationMode.Diagnose);
         var trees = sources.Select(source => CSharpSyntaxTree.ParseText(source.Text, parseOptions, source.Path)).ToArray();
         var compilation = CSharpCompilation.Create(
             "Cases",
             trees,
-            await References.Value,
+            references ?? await References.Value,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
 
         var errors = compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();

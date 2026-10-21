@@ -12,6 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Archie" Version="$(ArchieVersion)" PrivateAssets="all" />
-    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)smoke.globalconfig" />
+    <!-- run.sh turns the downgrade off once (ArchieSmokeDefaults=true) to check that a violation fails the build by default. -->
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)smoke.globalconfig" Condition="'$(ArchieSmokeDefaults)' != 'true'" />
   </ItemGroup>
 </Project>

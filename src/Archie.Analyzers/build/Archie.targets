@@ -4,9 +4,11 @@
     <ArchieConfig Condition="'$(ArchieConfig)' == ''">$([MSBuild]::GetPathOfFileAbove('archie.json', '$(MSBuildProjectDirectory)'))</ArchieConfig>
   </PropertyGroup>
   <ItemGroup Condition="'$(ArchieEnabled)' != 'false' and '$(ArchieConfig)' != ''">
-    <AdditionalFiles Include="$(ArchieConfig)" />
+    <!-- Marked, so the analyzer also finds a file <ArchieConfig> names that is not called archie.json. -->
+    <AdditionalFiles Include="$(ArchieConfig)" ArchieConfig="true" />
   </ItemGroup>
   <ItemGroup>
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ArchieConfig" />
     <CompilerVisibleProperty Include="IsTestProject" />
     <CompilerVisibleProperty Include="ArchieEnabled" />
   </ItemGroup>

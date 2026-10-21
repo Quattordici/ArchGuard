@@ -29,6 +29,30 @@ public class ConfigDiscoveryTests
     }
 
     [Test]
+    public async Task Finds_a_config_with_another_name_that_build_Archie_targets_marks()
+    {
+        // <ArchieConfig>rules.json</ArchieConfig>: the targets mark the file, which the compiler sees as build_metadata.
+        var test = NewTest();
+        test.TestCode = "namespace App.Infrastructure { public class Db { } } namespace App.Domain { public class Invoice { public App.Infrastructure.{|#0:Db|}? Db; } }";
+        test.TestState.AdditionalFiles.Add(("/solution/rules.json", """{ "rootNamespace": "App", "layers": ["Infrastructure", "Domain"] }"""));
+        test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", "is_global = true\n[/solution/rules.json]\nbuild_metadata.AdditionalFiles.ArchieConfig = true\n"));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(Diagnostics.LayerDependency).WithLocation(0)
+            .WithArguments("Domain", "Infrastructure", "Invoice.Db", "Db", "App.Infrastructure", "nothing"));
+
+        await test.RunAsync();
+    }
+
+    [Test]
+    public async Task Ignores_a_file_with_another_name_that_is_not_marked()
+    {
+        var test = NewTest();
+        test.TestState.AdditionalFiles.Add(("/solution/rules.json", """{ "rootNamespace": "App", "layers": ["Domain"] }"""));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(Diagnostics.NoConfig));
+
+        await test.RunAsync();
+    }
+
+    [Test]
     [Arguments("IsTestProject", "true")]
     [Arguments("ArchieEnabled", "false")]
     public async Task Is_silent_for_excluded_projects(string property, string value)

@@ -1,0 +1,26 @@
+// Archie's own architecture, checked by Archie: tests/Archie.Analyzers.Tests/OwnArchitectureTests.cs compiles src/ and expects no violations.
+// Not found by any build: nothing in this repository references the Archie package.
+{
+  "$schema": "../schema/v1.json",
+  "layers": {
+    // The analyzer turns symbols and operations into edges and reports; every rule is decided in Core.
+    "Analyzers":   { "namespaces": "Archie.Analyzers", "mayDependOn": ["Config", "Conventions", "Rules"] },
+    "Config":      { "namespaces": "Archie.Core.Config", "mayDependOn": ["Conventions", "Rules", "Json"] },
+    "Conventions": { "namespaces": "Archie.Core.Conventions", "mayDependOn": ["Rules"] },
+    // ArchModel carries the conventions, so Rules and Conventions know each other.
+    "Rules":       { "namespaces": "Archie.Core.Rules", "mayDependOn": ["Conventions"] },
+    // Only the config reader reads JSON.
+    "Json":        "Archie.Core.Json",
+  },
+  // Core is loaded by every host next to the analyzer and, in Phase 4, by the metadata runner: no Roslyn types, no JSON library.
+  "mustNotDependOn": {
+    "Config":      ["Microsoft.CodeAnalysis", "System.Text.Json", "Newtonsoft.Json"],
+    "Conventions": ["Microsoft.CodeAnalysis", "System.Text.Json", "Newtonsoft.Json"],
+    "Rules":       ["Microsoft.CodeAnalysis", "System.Text.Json", "Newtonsoft.Json"],
+    "Json":        ["Microsoft.CodeAnalysis", "System.Text.Json", "Newtonsoft.Json"],
+  },
+  "conventions": [
+    { "name": "Analyzers", "types": { "inherit": "DiagnosticAnalyzer" }, "mustBeIn": "Analyzers", "mustBe": ["public", "sealed"] },
+    { "name": "JsonReader", "types": { "in": "Json" }, "mustBe": "internal" },
+  ],
+}

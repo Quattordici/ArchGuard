@@ -8,13 +8,13 @@ namespace Archie.Core.Config;
 
 public static partial class ConfigParser
 {
-    private static readonly string[] ConventionKeys =
+    internal static readonly string[] ConventionKeys =
     [
         "name", "types", "mustBeNamed", "mustNotBeNamed", "mustBeIn", "mustNotBeIn", "mustInherit", "mustNotInherit", "mustHaveAttribute",
         "mustNotHaveAttribute", "mustBe", "mustNotBe",
     ];
 
-    private static readonly string[] SelectorKeys = ["in", "named", "inherit", "haveAttribute", "are", "areNot"];
+    internal static readonly string[] SelectorKeys = ["in", "named", "inherit", "haveAttribute", "are", "areNot"];
 
     private sealed partial class Reader
     {

@@ -40,13 +40,13 @@ public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
         var properties = context.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
-        if (!IsTrue(properties, "ArchieEnabled", whenMissing: true))
+        if (!IsTrue(properties, "build_property.ArchieEnabled", whenMissing: true))
         {
             return;
         }
 
-        var isTestProject = IsTrue(properties, "IsTestProject", whenMissing: false);
-        var configs = FindConfigs(context.Options.AdditionalFiles);
+        var isTestProject = IsTrue(properties, "build_property.IsTestProject", whenMissing: false);
+        var configs = FindConfigs(context.Options);
         if (configs.Count == 0)
         {
             // Test projects are excluded by default (design §4.4), so a missing config is only worth mentioning for production code.
@@ -123,12 +123,17 @@ public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static List<AdditionalText> FindConfigs(ImmutableArray<AdditionalText> files)
+    /// <summary>
+    /// Files named archie.json, and the file build/Archie.targets passes (marked <c>ArchieConfig</c>, so <c>&lt;ArchieConfig&gt;</c> may name a
+    /// file with any name; without the mark such a file would be ignored and the project quietly unchecked).
+    /// </summary>
+    private static List<AdditionalText> FindConfigs(AnalyzerOptions options)
     {
         var configs = new List<AdditionalText>(1);
-        foreach (var file in files)
+        foreach (var file in options.AdditionalFiles)
         {
-            if (string.Equals(Path.GetFileName(file.Path), ConfigFileName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(Path.GetFileName(file.Path), ConfigFileName, StringComparison.OrdinalIgnoreCase)
+                || IsTrue(options.AnalyzerConfigOptionsProvider.GetOptions(file), "build_metadata.AdditionalFiles.ArchieConfig", whenMissing: false))
             {
                 configs.Add(file);
             }
@@ -137,8 +142,8 @@ public sealed class ArchitectureAnalyzer : DiagnosticAnalyzer
         return configs;
     }
 
-    private static bool IsTrue(AnalyzerConfigOptions options, string property, bool whenMissing) =>
-        options.TryGetValue("build_property." + property, out var value) && value.Length > 0
+    private static bool IsTrue(AnalyzerConfigOptions options, string key, bool whenMissing) =>
+        options.TryGetValue(key, out var value) && value.Length > 0
             ? string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
             : whenMissing;
 }

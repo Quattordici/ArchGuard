@@ -19,6 +19,11 @@ namespace App.Domain.Cases
         public object NoLayer() => new App.Shared.Clock();
 
         public object GlobalNamespace() => new GlobalThing();
+
+        // Known gap: a constant in an attribute argument is not counted. Roslyn 4.8 gives no operations for attribute arguments, and a
+        // compiled attribute only holds the value, so the Phase 4 metadata backend could not see it either.
+        [Value(Db.MaxSize)]
+        public void AttributeConstant() { }
     }
 }
 
