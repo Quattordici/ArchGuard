@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Archie.Analyzers/Archie.Analyzers.csproj" />
+    <Project Path="src/Archie.Core/Archie.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Archie.Analyzers.Tests/Archie.Analyzers.Tests.csproj" />
+    <Project Path="tests/Archie.Core.Tests/Archie.Core.Tests.csproj" />
   </Folder>
 </Solution>
