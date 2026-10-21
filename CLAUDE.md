@@ -10,6 +10,7 @@ dotnet test -c Release                                   # TUnit + Shouldly + Mi
 dotnet test -c Release -p:TestAgainstFloors=true         # the same tests on Roslyn 4.8
 dotnet pack src/Archie.Analyzers -c Release -o artifacts/packages -p:Version=0.0.0-smoke
 tests/HostSmoke/run.sh 0.0.0-smoke artifacts/packages    # the package in a plain project, built by the active SDK's compiler
+samples/Shop/check.sh 0.0.0-smoke artifacts/packages     # the sample solution reports exactly the errors its README lists
 dotnet run -c Release --project benchmarks/Archie.Benchmarks -- --budget   # allocations and per-document time on 114k synthetic lines
 benchmarks/build-budget.sh 0.0.0-smoke artifacts/packages            # Archie's share of csc time in a real build (budget 5%)
 ```

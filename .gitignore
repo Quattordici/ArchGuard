@@ -429,4 +429,5 @@ FodyWeavers.xsd
 
 # Written by CI to pin the SDK the host smoke test runs on.
 tests/HostSmoke/global.json
+samples/Shop/global.json
 TestResults/

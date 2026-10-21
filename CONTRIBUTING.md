@@ -19,7 +19,8 @@ dotnet test -c Release -p:TestAgainstFloors=true   # the same tests on Roslyn 4.
 
 The analyzer targets `netstandard2.0` and compiles against Roslyn 4.8, so it loads in the .NET 8 SDK and Visual Studio 17.8 and later.
 CI also packs the package and builds a plain project with it on the .NET 8.0.1xx SDK (Roslyn 4.8) and the current SDK
-(`tests/HostSmoke/run.sh`), which fails if the analyzer can't be loaded or doesn't run.
+(`tests/HostSmoke/run.sh`), which fails if the analyzer can't be loaded or doesn't run, and builds the sample solution
+(`samples/Shop/check.sh`), which must report exactly the errors its README lists.
 
 ## Performance
 
