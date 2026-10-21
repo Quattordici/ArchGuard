@@ -84,7 +84,7 @@ jobs:
           dotnet pack src/Archie.Analyzers -c Release -o artifacts/packages -p:Version="$VERSION"
           # The package is an analyzer only: anything in lib/ would become a runtime reference of every project that installs it.
           contents=$(unzip -Z1 "artifacts/packages/Archie.$VERSION.nupkg")
-          for file in analyzers/dotnet/cs/Archie.Analyzers.dll build/Archie.targets; do
+          for file in analyzers/dotnet/cs/Archie.Analyzers.dll analyzers/dotnet/cs/Archie.Core.dll build/Archie.targets; do
             grep -qx "$file" <<< "$contents" || { echo "::error::The Archie package has no $file."; exit 1; }
           done
           if grep -q '^lib/' <<< "$contents"; then echo "::error::The Archie package has a lib/ folder."; exit 1; fi

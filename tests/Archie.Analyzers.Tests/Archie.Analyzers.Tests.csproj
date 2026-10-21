@@ -27,6 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The conformance corpus is data (tests/Corpus/README.md): copied next to the tests, never compiled into them. -->
+    <None Include="../Corpus/**/*" LinkBase="Corpus" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../src/Archie.Analyzers/Archie.Analyzers.csproj" />
   </ItemGroup>
 </Project>

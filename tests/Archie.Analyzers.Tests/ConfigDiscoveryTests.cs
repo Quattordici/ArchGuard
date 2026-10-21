@@ -23,7 +23,7 @@ public class ConfigDiscoveryTests
     public async Task Is_silent_when_archie_json_is_an_additional_file()
     {
         var test = NewTest();
-        test.TestState.AdditionalFiles.Add(("/solution/archie.json", "{ }"));
+        test.TestState.AdditionalFiles.Add(("/solution/archie.json", """{ "rootNamespace": "App", "layers": ["Domain"] }"""));
 
         await test.RunAsync();
     }
