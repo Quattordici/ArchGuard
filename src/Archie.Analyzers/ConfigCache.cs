@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Archie.Core.Config;
+using Archie.Core.Conventions;
 using Archie.Core.Rules;
 
 namespace Archie.Analyzers;
@@ -52,6 +53,7 @@ internal static class ConfigCache
             Text = text;
             Result = result;
             Evaluator = result.Model is null ? null : new ArchEvaluator(result.Model);
+            Conventions = Evaluator is { Model.Conventions.Count: > 0 } ? new ConventionEvaluator(Evaluator) : null;
         }
 
         public string Text { get; }
@@ -60,5 +62,8 @@ internal static class ConfigCache
 
         /// <summary>Shared by every compilation with this config; its namespace cache is keyed by name, so that is safe.</summary>
         public ArchEvaluator? Evaluator { get; }
+
+        /// <summary>Set when the config has conventions.</summary>
+        public ConventionEvaluator? Conventions { get; }
     }
 }

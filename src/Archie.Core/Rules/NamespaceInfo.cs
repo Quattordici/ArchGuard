@@ -5,9 +5,10 @@ public sealed class NamespaceInfo
 {
     private readonly bool[]? _forbiddenFor;
 
-    internal NamespaceInfo(string name, int layer, bool isExcluded, bool[]? forbiddenFor)
+    internal NamespaceInfo(string name, string[] segments, int layer, bool isExcluded, bool[]? forbiddenFor)
     {
         Name = name;
+        Segments = segments;
         Layer = layer;
         IsExcluded = isExcluded;
         _forbiddenFor = forbiddenFor;
@@ -15,6 +16,9 @@ public sealed class NamespaceInfo
 
     /// <summary>The namespace; empty for the global namespace.</summary>
     public string Name { get; }
+
+    /// <summary>The namespace split at its dots; empty for the global namespace.</summary>
+    internal string[] Segments { get; }
 
     /// <summary>Index of the layer the namespace belongs to, or -1.</summary>
     public int Layer { get; }

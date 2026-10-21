@@ -2,10 +2,9 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/Quattordici/Archie/main/schema/v1.json",
   "title": "archie.json",
-  "description": "Architecture rules for Archie: layers, what each layer may depend on, and outside namespaces a layer must not use. Comments and trailing commas are allowed.",
+  "description": "Architecture rules for Archie: layers, what each layer may depend on, outside namespaces a layer must not use, and conventions for types (naming, placement, inheritance, attributes, kind and modifiers). Comments and trailing commas are allowed.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["layers"],
   "definitions": {
     "layerName": {
       "type": "string",
@@ -19,17 +18,371 @@
     },
     "namespacePatterns": {
       "oneOf": [
-        { "$ref": "#/definitions/namespacePattern" },
-        { "type": "array", "items": { "$ref": "#/definitions/namespacePattern" } }
+        {
+          "$ref": "#/definitions/namespacePattern"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/namespacePattern"
+          }
+        }
       ]
     },
     "mustNotDependOn": {
       "description": "Outside namespaces (not layers) this layer must not use, e.g. Microsoft.EntityFrameworkCore. Reported as ARCH002. Merged with the top-level mustNotDependOn.",
       "$ref": "#/definitions/namespacePatterns"
+    },
+    "place": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A layer name, or a namespace (anything with a dot or a wildcard: 'MyApp.Shared', 'MyApp.*.Contracts'). For a one-segment namespace write 'Shared.**'."
+    },
+    "namePattern": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_*]+$",
+      "description": "A type name without namespace; '*' is any characters: '*Handler', 'I*'."
+    },
+    "typeName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A type, with or without its namespace: 'IRequestHandler<,>', 'MediatR.IRequestHandler<,>', 'EntityBase'. Without a namespace it matches the name in any namespace; '<,>' fixes the number of type parameters, none means any."
+    },
+    "trait": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "abstract",
+        "sealed",
+        "static",
+        "record",
+        "class",
+        "interface",
+        "struct",
+        "enum",
+        "delegate"
+      ],
+      "description": "A kind (class, interface, struct, enum, delegate, record) or modifier (public, internal, abstract, sealed, static)."
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Which types the convention applies to. Every key given must match; a list means any of its values, except 'are' (all) and 'areNot' (none). Without 'types', every checked type.",
+      "properties": {
+        "in": {
+          "description": "Types in one of these layers or namespaces.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/place"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/place"
+              }
+            }
+          ]
+        },
+        "named": {
+          "description": "Types whose name matches one of these patterns.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/namePattern"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/namePattern"
+              }
+            }
+          ]
+        },
+        "inherit": {
+          "description": "Types that inherit one of these: a base class at any depth or an interface, directly or not.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "haveAttribute": {
+          "description": "Types declared with one of these attributes ('Attribute' may be left off).",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "are": {
+          "description": "Types that are all of these, e.g. [\"public\", \"class\"].",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/trait"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/trait"
+              }
+            }
+          ]
+        },
+        "areNot": {
+          "description": "Types that are none of these, e.g. \"abstract\".",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/trait"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/trait"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "convention": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional; messages name the convention by it, otherwise as conventions[i]."
+        },
+        "types": {
+          "$ref": "#/definitions/selector"
+        },
+        "mustBeNamed": {
+          "description": "The name must match one of these patterns. ARCH101.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/namePattern"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/namePattern"
+              }
+            }
+          ]
+        },
+        "mustNotBeNamed": {
+          "description": "The name must match none of these patterns. ARCH101.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/namePattern"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/namePattern"
+              }
+            }
+          ]
+        },
+        "mustBeIn": {
+          "description": "The type must be in one of these layers or namespaces. ARCH102.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/place"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/place"
+              }
+            }
+          ]
+        },
+        "mustNotBeIn": {
+          "description": "The type must be in none of these layers or namespaces. ARCH102.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/place"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/place"
+              }
+            }
+          ]
+        },
+        "mustInherit": {
+          "description": "The type must inherit all of these (base classes or interfaces). ARCH103.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "mustNotInherit": {
+          "description": "The type must inherit none of these. ARCH103.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "mustHaveAttribute": {
+          "description": "The type must be declared with all of these attributes. ARCH104.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "mustNotHaveAttribute": {
+          "description": "The type must have none of these attributes. ARCH104.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/typeName"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/typeName"
+              }
+            }
+          ]
+        },
+        "mustBe": {
+          "description": "The type must be all of these, e.g. [\"sealed\", \"record\"]. ARCH105.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/trait"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/trait"
+              }
+            }
+          ]
+        },
+        "mustNotBe": {
+          "description": "The type must be none of these, e.g. \"public\". ARCH105.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/trait"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/trait"
+              }
+            }
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "mustBeNamed"
+          ]
+        },
+        {
+          "required": [
+            "mustNotBeNamed"
+          ]
+        },
+        {
+          "required": [
+            "mustBeIn"
+          ]
+        },
+        {
+          "required": [
+            "mustNotBeIn"
+          ]
+        },
+        {
+          "required": [
+            "mustInherit"
+          ]
+        },
+        {
+          "required": [
+            "mustNotInherit"
+          ]
+        },
+        {
+          "required": [
+            "mustHaveAttribute"
+          ]
+        },
+        {
+          "required": [
+            "mustNotHaveAttribute"
+          ]
+        },
+        {
+          "required": [
+            "mustBe"
+          ]
+        },
+        {
+          "required": [
+            "mustNotBe"
+          ]
+        }
+      ]
     }
   },
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
     "rootNamespace": {
       "type": "string",
       "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
@@ -43,18 +396,26 @@
           "minItems": 1,
           "items": {
             "oneOf": [
-              { "$ref": "#/definitions/layerName" },
+              {
+                "$ref": "#/definitions/layerName"
+              },
               {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
-                  "name": { "$ref": "#/definitions/layerName" },
+                  "name": {
+                    "$ref": "#/definitions/layerName"
+                  },
                   "namespaces": {
                     "description": "The namespaces in this layer, when they are not rootNamespace.name.",
                     "$ref": "#/definitions/namespacePatterns"
                   },
-                  "mustNotDependOn": { "$ref": "#/definitions/mustNotDependOn" }
+                  "mustNotDependOn": {
+                    "$ref": "#/definitions/mustNotDependOn"
+                  }
                 }
               }
             ]
@@ -63,24 +424,42 @@
         {
           "type": "object",
           "minProperties": 1,
-          "propertyNames": { "$ref": "#/definitions/layerName" },
+          "propertyNames": {
+            "$ref": "#/definitions/layerName"
+          },
           "additionalProperties": {
             "oneOf": [
-              { "$ref": "#/definitions/namespacePatterns" },
+              {
+                "$ref": "#/definitions/namespacePatterns"
+              },
               {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["namespaces"],
+                "required": [
+                  "namespaces"
+                ],
                 "properties": {
-                  "namespaces": { "description": "The namespaces in this layer.", "$ref": "#/definitions/namespacePatterns" },
+                  "namespaces": {
+                    "description": "The namespaces in this layer.",
+                    "$ref": "#/definitions/namespacePatterns"
+                  },
                   "mayDependOn": {
                     "description": "The layers this layer may depend on. Missing means nothing. A layer may always depend on itself.",
                     "oneOf": [
-                      { "$ref": "#/definitions/layerName" },
-                      { "type": "array", "items": { "$ref": "#/definitions/layerName" } }
+                      {
+                        "$ref": "#/definitions/layerName"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/layerName"
+                        }
+                      }
                     ]
                   },
-                  "mustNotDependOn": { "$ref": "#/definitions/mustNotDependOn" }
+                  "mustNotDependOn": {
+                    "$ref": "#/definitions/mustNotDependOn"
+                  }
                 }
               }
             ]
@@ -91,8 +470,12 @@
     "mustNotDependOn": {
       "type": "object",
       "description": "Per layer, outside namespaces it must not use, e.g. { \"Domain\": [\"Microsoft.EntityFrameworkCore\"] }. Reported as ARCH002.",
-      "propertyNames": { "$ref": "#/definitions/layerName" },
-      "additionalProperties": { "$ref": "#/definitions/namespacePatterns" }
+      "propertyNames": {
+        "$ref": "#/definitions/layerName"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/namespacePatterns"
+      }
     },
     "exclude": {
       "description": "Namespaces whose code is not checked (legacy code). They still count when other code depends on them.",
@@ -102,6 +485,25 @@
       "type": "boolean",
       "default": false,
       "description": "Test projects (IsTestProject=true) are not checked unless this is true."
+    },
+    "conventions": {
+      "type": "array",
+      "description": "Conventions for types: which types (types) and what they must be (must… keys). Reported as ARCH101 to ARCH105.",
+      "items": {
+        "$ref": "#/definitions/convention"
+      }
     }
-  }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "layers"
+      ]
+    },
+    {
+      "required": [
+        "conventions"
+      ]
+    }
+  ]
 }

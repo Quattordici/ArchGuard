@@ -85,6 +85,52 @@ public class AnalyzerTests
     }
 
     [Test]
+    public async Task A_convention_violation_says_what_is_required_where_the_type_is_and_which_convention()
+    {
+        const string config = """
+            {
+              "rootNamespace": "App",
+              "layers": ["Application", "Domain"],
+              "conventions": [{ "name": "Handlers", "types": { "inherit": "IHandler<>" }, "mustBeIn": "Application" }]
+            }
+            """;
+        const string source = """
+            namespace App.Domain
+            {
+                public interface IHandler<T> { }
+                public sealed class Thing { }
+            }
+            namespace App.Domain.Orders { public sealed class PlaceOrder : IHandler<Thing> { } }
+            """;
+
+        var diagnostic = (await RunAsync(source, config)).ShouldHaveSingleItem();
+
+        diagnostic.Id.ShouldBe("ARCH102");
+        diagnostic.Severity.ShouldBe(DiagnosticSeverity.Error);
+        diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture).ShouldBe(
+            "'PlaceOrder' must be in Application, but is in Domain (App.Domain.Orders). Convention 'Handlers' in archie.json applies to types that inherit 'IHandler<>'.");
+        diagnostic.Properties.ShouldBe(new Dictionary<string, string?>
+        {
+            ["convention"] = "Handlers",
+            ["sourceId"] = "T:App.Domain.Orders.PlaceOrder",
+            ["targetId"] = "mustBeIn=Application",
+            ["kind"] = "mustBeIn",
+        }, ignoreOrder: true);
+    }
+
+    [Test]
+    public async Task Conventions_work_without_layers()
+    {
+        const string config = """{ "conventions": [{ "types": { "are": "interface" }, "mustBeNamed": "I*" }] }""";
+        const string source = "namespace Anything { public interface Repository { } public interface IGood { } }";
+
+        var diagnostic = (await RunAsync(source, config)).ShouldHaveSingleItem();
+
+        diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture).ShouldBe(
+            "'Repository' must be named 'I*'. conventions[0] in archie.json applies to types that are interface.");
+    }
+
+    [Test]
     public async Task Config_errors_point_at_the_line_in_archie_json_and_check_nothing()
     {
         const string config = """
@@ -100,7 +146,7 @@ public class AnalyzerTests
         diagnostic.Id.ShouldBe("ARCH901");
         diagnostic.Severity.ShouldBe(DiagnosticSeverity.Error);
         diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture).ShouldBe(
-            "Unknown key 'mayDependsOn' at the top level. Known keys: $schema, rootNamespace, layers, mustNotDependOn, exclude, checkTestProjects.");
+            "Unknown key 'mayDependsOn' at the top level. Known keys: $schema, rootNamespace, layers, mustNotDependOn, exclude, checkTestProjects, conventions.");
         var span = diagnostic.Location.GetLineSpan();
         span.Path.ShouldBe("/solution/archie.json");
         span.StartLinePosition.ShouldBe(new Microsoft.CodeAnalysis.Text.LinePosition(3, 2));
