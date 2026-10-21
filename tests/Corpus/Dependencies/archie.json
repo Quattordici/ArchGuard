@@ -1,0 +1,6 @@
+{
+  "rootNamespace": "App",
+  "layers": ["Api", "Infrastructure", "Application", "Domain"],
+  "mustNotDependOn": { "Domain": ["Vendor.Orm"] },
+  "exclude": ["App.Domain.Legacy"],
+}
