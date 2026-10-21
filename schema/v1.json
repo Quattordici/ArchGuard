@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Quattordici/Archie/main/schema/v1.json",
+  "title": "archie.json",
+  "description": "Architecture rules for Archie: layers, what each layer may depend on, and outside namespaces a layer must not use. Comments and trailing commas are allowed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["layers"],
+  "definitions": {
+    "layerName": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "description": "A layer name: letters, digits and '_', starting with a letter. No dots, so it can never be mistaken for a namespace."
+    },
+    "namespacePattern": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A namespace, matched segment by segment. It covers everything under it: 'MyApp.Domain' is MyApp.Domain and MyApp.Domain.Orders. '*' is one segment, '**' any number: 'MyApp.*.Domain'."
+    },
+    "namespacePatterns": {
+      "oneOf": [
+        { "$ref": "#/definitions/namespacePattern" },
+        { "type": "array", "items": { "$ref": "#/definitions/namespacePattern" } }
+      ]
+    },
+    "mustNotDependOn": {
+      "description": "Outside namespaces (not layers) this layer must not use, e.g. Microsoft.EntityFrameworkCore. Reported as ARCH002. Merged with the top-level mustNotDependOn.",
+      "$ref": "#/definitions/namespacePatterns"
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "rootNamespace": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+      "description": "The namespace the layer names in a list are relative to: with \"MyApp\", layer \"Domain\" is MyApp.Domain and everything under it."
+    },
+    "layers": {
+      "description": "The layers. A list, top to bottom: each layer may depend on the layers below it. Or an object of named layers, each stating what it may depend on.",
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/definitions/layerName" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name"],
+                "properties": {
+                  "name": { "$ref": "#/definitions/layerName" },
+                  "namespaces": {
+                    "description": "The namespaces in this layer, when they are not rootNamespace.name.",
+                    "$ref": "#/definitions/namespacePatterns"
+                  },
+                  "mustNotDependOn": { "$ref": "#/definitions/mustNotDependOn" }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/definitions/layerName" },
+          "additionalProperties": {
+            "oneOf": [
+              { "$ref": "#/definitions/namespacePatterns" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["namespaces"],
+                "properties": {
+                  "namespaces": { "description": "The namespaces in this layer.", "$ref": "#/definitions/namespacePatterns" },
+                  "mayDependOn": {
+                    "description": "The layers this layer may depend on. Missing means nothing. A layer may always depend on itself.",
+                    "oneOf": [
+                      { "$ref": "#/definitions/layerName" },
+                      { "type": "array", "items": { "$ref": "#/definitions/layerName" } }
+                    ]
+                  },
+                  "mustNotDependOn": { "$ref": "#/definitions/mustNotDependOn" }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "mustNotDependOn": {
+      "type": "object",
+      "description": "Per layer, outside namespaces it must not use, e.g. { \"Domain\": [\"Microsoft.EntityFrameworkCore\"] }. Reported as ARCH002.",
+      "propertyNames": { "$ref": "#/definitions/layerName" },
+      "additionalProperties": { "$ref": "#/definitions/namespacePatterns" }
+    },
+    "exclude": {
+      "description": "Namespaces whose code is not checked (legacy code). They still count when other code depends on them.",
+      "$ref": "#/definitions/namespacePatterns"
+    },
+    "checkTestProjects": {
+      "type": "boolean",
+      "default": false,
+      "description": "Test projects (IsTestProject=true) are not checked unless this is true."
+    }
+  }
+}

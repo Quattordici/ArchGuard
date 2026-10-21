@@ -3,3 +3,7 @@ is_global = true
 # Info diagnostics are not printed by the build; as a warning, ARCH909 shows whether the analyzer ran and found (or missed) archie.json.
 # A global config, not .editorconfig: ARCH909 has no source location, and [*.cs] sections only apply to diagnostics in a file.
 dotnet_diagnostic.ARCH909.severity = warning
+
+# ARCH001 is an error by default; as a warning the build succeeds and the log shows it, which proves the rules ran in this host (including
+# loading Archie.Core.dll next to the analyzer).
+dotnet_diagnostic.ARCH001.severity = warning

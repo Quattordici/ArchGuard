@@ -1,3 +1,5 @@
-// Found through build/Archie.targets (GetPathOfFileAbove); the content is not read yet.
+// Found through build/Archie.targets (GetPathOfFileAbove). Order.cs breaks the rule once, so the build must report ARCH001.
 {
+  "rootNamespace": "App.WithConfig",
+  "layers": ["Infrastructure", "Domain"],
 }
