@@ -43,7 +43,7 @@ internal static class BodyRules
         {
             case IInvocationOperation invocation when !invocation.IsImplicit && invocation.Syntax is InvocationExpressionSyntax call:
                 var method = invocation.TargetMethod;
-                if (!Check(context, checker, source, method.ContainingType, DependencyKind.Invocation, Locations.NameOf(call.Expression))
+                if (!Check(context, checker, source, method.ContainingType, DependencyKind.Invocation, call.Expression)
                     && GenericName(call.Expression) is { } generic)
                 {
                     foreach (var argument in method.TypeArguments)
@@ -61,7 +61,7 @@ internal static class BodyRules
                     creation.Syntax is ObjectCreationExpressionSyntax written ? written.Type : creation.Syntax);
                 break;
             case IMemberReferenceOperation member when !member.IsImplicit:
-                Check(context, checker, source, member.Member.ContainingType, DependencyKind.MemberAccess, Locations.NameOf(member.Syntax));
+                Check(context, checker, source, member.Member.ContainingType, DependencyKind.MemberAccess, member.Syntax);
                 break;
             case ITypeOfOperation typeOf:
                 CheckIn(context, checker, source, typeOf.TypeOperand, DependencyKind.TypeOf, (typeOf.Syntax as TypeOfExpressionSyntax)?.Type);
@@ -127,7 +127,7 @@ internal static class BodyRules
                     CheckIn(context, checker, source, local.Symbol.ReturnType, DependencyKind.ReturnType, localFunction.ReturnType);
                 }
 
-                CheckParameters(context, checker, source, local.Symbol);
+                CheckParameters(context, checker, source, local.Symbol, localFunction.ParameterList);
                 break;
             case IAnonymousFunctionOperation lambda:
                 if (lambda.Syntax is ParenthesizedLambdaExpressionSyntax { ReturnType: { } lambdaReturn })
@@ -135,20 +135,35 @@ internal static class BodyRules
                     CheckIn(context, checker, source, lambda.Symbol.ReturnType, DependencyKind.ReturnType, lambdaReturn);
                 }
 
-                CheckParameters(context, checker, source, lambda.Symbol);
+                // `x => …` and `delegate { … }` write no parameter types: they are inferred.
+                var parameterList = lambda.Syntax switch
+                {
+                    ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList,
+                    AnonymousMethodExpressionSyntax anonymous => anonymous.ParameterList,
+                    _ => null,
+                };
+
+                if (parameterList is not null)
+                {
+                    CheckParameters(context, checker, source, lambda.Symbol, parameterList);
+                }
+
                 break;
         }
     }
 
-    private static void CheckParameters(OperationAnalysisContext context, DependencyChecker checker, NamespaceInfo source, IMethodSymbol method)
+    private static void CheckParameters(OperationAnalysisContext context, DependencyChecker checker, NamespaceInfo source, IMethodSymbol method,
+        ParameterListSyntax list)
     {
-        foreach (var parameter in method.Parameters)
+        // The written list, not DeclaringSyntaxReferences: asking a lambda's parameter symbol for its syntax was a third of Archie's time.
+        var parameters = method.Parameters;
+        var written = list.Parameters;
+        for (var i = 0; i < parameters.Length && i < written.Count; i++)
         {
-            // Only written types: `x => …` infers its parameter's type.
-            if (parameter.DeclaringSyntaxReferences.Length > 0
-                && parameter.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken) is ParameterSyntax { Type: { } type })
+            // Only written types: `(x, y) => …` infers them.
+            if (written[i].Type is { } type)
             {
-                CheckIn(context, checker, source, parameter.Type, DependencyKind.Parameter, type);
+                CheckIn(context, checker, source, parameters[i].Type, DependencyKind.Parameter, type);
             }
         }
     }
@@ -166,20 +181,17 @@ internal static class BodyRules
         return true;
     }
 
-    /// <summary>Checks <paramref name="type"/> and squiggles <paramref name="syntax"/> as a whole.</summary>
+    /// <summary>Checks <paramref name="type"/> and squiggles the member name in <paramref name="access"/> (<c>a.b.Name</c>, <c>Name</c>).</summary>
     private static bool Check(OperationAnalysisContext context, DependencyChecker checker, NamespaceInfo source, ITypeSymbol? type,
-        DependencyKind kind, SyntaxNode syntax) =>
-        Check(context, checker, source, type, kind, syntax.GetLocation());
-
-    private static bool Check(OperationAnalysisContext context, DependencyChecker checker, NamespaceInfo source, ITypeSymbol? type,
-        DependencyKind kind, Location location)
+        DependencyKind kind, SyntaxNode access)
     {
         if (checker.Find(source, type) is not { } hit)
         {
             return false;
         }
 
-        Report(context, checker, source, hit, kind, location);
+        // Only for a violation: every call and member access goes through here, and a location allocates.
+        Report(context, checker, source, hit, kind, Locations.NameOf(access));
         return true;
     }
 

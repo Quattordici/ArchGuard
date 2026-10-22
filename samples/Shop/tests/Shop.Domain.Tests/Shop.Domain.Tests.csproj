@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Set by Microsoft.NET.Test.Sdk, xunit.v3, TUnit and MSTest in a real test project; written here so the sample needs no test framework. -->
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Shop.Domain/Shop.Domain.csproj" />
+    <ProjectReference Include="../../src/Shop.Infrastructure/Shop.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

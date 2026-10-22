@@ -31,6 +31,8 @@ src/MyApp.Domain/Orders/Order.cs(14,17): error ARCH001: Domain must not depend o
   'Order.Save' uses 'AppDbContext' (MyApp.Infrastructure.Persistence). Domain may depend on: nothing.
 ```
 
+[samples/Shop](samples/Shop) is a small solution set up this way, with one violation of each kind to build and try.
+
 ## More rules
 
 **Any other graph:** name the layers and say what each one may depend on. A layer without `mayDependOn` may depend on nothing but itself.

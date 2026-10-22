@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Archie.Benchmarks/Archie.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Archie.Analyzers/Archie.Analyzers.csproj" />
     <Project Path="src/Archie.Core/Archie.Core.csproj" />

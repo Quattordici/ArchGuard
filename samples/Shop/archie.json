@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Quattordici/Archie/main/schema/v1.json",
+  "rootNamespace": "Shop",
+  "layers": ["Infrastructure", "Application", "Domain"],
+  "mustNotDependOn": { "Domain": ["System.Net.Http"] },
+  "conventions": [
+    { "name": "Handlers", "types": { "inherit": "IHandler<,>" }, "mustBeNamed": "*Handler", "mustBeIn": "Application" },
+    { "name": "Repositories", "types": { "named": "I*Repository" }, "mustBe": "interface", "mustBeIn": "Domain" }
+  ]
+}

@@ -1,0 +1,14 @@
+<Project>
+  <!-- A plain solution the way a user sets it up: Archie once for every project, archie.json next to Shop.slnx. Deliberately does not
+       import the repository's Directory.Build.props. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The published alpha by default; CI passes the package it just packed. -->
+    <ArchieVersion Condition="'$(ArchieVersion)' == ''">0.1.0-alpha.1</ArchieVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Archie" Version="$(ArchieVersion)" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

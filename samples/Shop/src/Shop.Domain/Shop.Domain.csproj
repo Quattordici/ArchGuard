@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <!-- The mistake Archie is for: Domain references Infrastructure, so the compiler is happy to let Order use AppDbContext. -->
+    <ProjectReference Include="../Shop.Infrastructure/Shop.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
