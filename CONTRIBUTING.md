@@ -26,7 +26,11 @@ CI also packs the package and builds a plain project with it on the .NET 8.0.1xx
 
 The analyzer runs on every keystroke in the IDE and in every build, so it has a budget (from the Phase 0 spike): at most 5% of csc's
 time and 50 MB of allocations per 100k lines. The weekly `Performance` workflow measures both on a synthetic 114k-line project; run them
-locally before and after a change to a hot path:
+locally before and after a change to a hot path. The time budget applies to a config with nothing to report; the same code with 222
+violations is reported next to it. Timing swings by up to 2x between invocations on a busy machine, so compare interleaved runs.
+
+Keep syntax out of the common path: look a symbol's syntax or a location up only once there is a violation. Asking a lambda parameter for
+its `DeclaringSyntaxReferences` and building every member access's location up front was half of Archie's time.
 
 ```bash
 dotnet run -c Release --project benchmarks/Archie.Benchmarks             # allocations and per-document time, in process

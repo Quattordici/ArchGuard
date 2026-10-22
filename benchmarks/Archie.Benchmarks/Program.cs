@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 // Usage: Archie.Benchmarks [--files 400] [--iterations 5] [--budget]    measure in process
-//        Archie.Benchmarks gen <folder> [--files 400]                  write the code as a project for benchmarks/build-budget.sh
+//        Archie.Benchmarks gen <folder> [--files 400] [--clean]        write the code as a project for benchmarks/build-budget.sh
 // Compiles the synthetic codebase in memory and measures Archie on top of an analyzer that only forces operation trees, like the SDK's own
 // analyzers do in a real build (without that baseline the trees would be charged to Archie; Phase 0 findings). Allocations are the budget
 // here; time is only reported, because in process the compiler's own lazy work lands in whichever analyzer asks first and swings the
@@ -25,7 +25,7 @@ if (args.Length > 1 && args[0] == "gen")
         File.WriteAllText(Path.Combine(target, path), text);
     }
 
-    File.WriteAllText(Path.Combine(target, "archie.json"), ArchieJson);
+    File.WriteAllText(Path.Combine(target, "archie.json"), args.Contains("--clean") ? CleanArchieJson : ArchieJson);
     File.WriteAllText(Path.Combine(target, "Synth.csproj"), SynthProject);
     File.WriteAllText(Path.Combine(target, "warnings.globalconfig"),
         "is_global = true\n" + string.Join("", new[] { "001", "002", "101", "102", "103", "104", "105" }.Select(id => $"dotnet_diagnostic.ARCH{id}.severity = warning\n")));
@@ -193,6 +193,26 @@ partial class Program
             <GlobalAnalyzerConfigFiles Include="warnings.globalconfig" />
           </ItemGroup>
         </Project>
+        """;
+
+    // The same checks with nothing to report: what a codebase that follows its rules pays on every build. The 222 violations of ArchieJson
+    // cost about as much again, mostly Roslyn's generated-code check of each file that gets a diagnostic.
+    private const string CleanArchieJson = """
+        {
+          "rootNamespace": "Synth",
+          "layers": {
+            "Infrastructure": { "namespaces": "Synth.Infrastructure", "mayDependOn": ["Application", "Domain"] },
+            "Application":    { "namespaces": "Synth.Application", "mayDependOn": ["Infrastructure", "Domain"] },
+            "Domain":         { "namespaces": "Synth.Domain", "mayDependOn": ["Infrastructure", "Application"] },
+          },
+          "mustNotDependOn": { "Domain": ["System.Net.Sockets"] },
+          "conventions": [
+            { "types": { "named": "Entity*" }, "mustBeIn": ["Domain", "Application", "Infrastructure"] },
+            { "types": { "inherit": "EntityBase" }, "mustNotHaveAttribute": "Serializable" },
+            { "types": { "named": "I*Store" }, "mustNotInherit": "IAsyncDisposable" },
+            { "mustNotBeNamed": ["*Coordinator", "*Utility"] },
+          ],
+        }
         """;
 
     private const string ArchieJson = """

@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Archie.Analyzers;
 
 /// <summary>Dependencies in declarations: base types, interfaces, member and parameter types, constraints and attributes (design §5).</summary>
+/// <remarks>The symbol is checked first and its syntax is only looked up for a violation: a symbol's declaring syntax costs more than the check.</remarks>
 internal static class DeclarationRules
 {
     public static readonly ImmutableArray<SymbolKind> Kinds =
@@ -41,20 +42,24 @@ internal static class DeclarationRules
 
                 break;
             case IFieldSymbol field:
-                if (FirstDeclarator(field) is { } fieldType)
+                if (scope.Find(field.Type) is { } fieldHit && FirstDeclarator(field) is { } fieldType)
                 {
-                    scope.Check(field.Type, DependencyKind.Field, fieldType);
+                    scope.Report(fieldHit, DependencyKind.Field, Locations.Of(fieldType, fieldHit.Type));
                 }
 
                 break;
             case IPropertySymbol property:
-                var syntax = DeclaringSyntax(property);
-                if (syntax is ParameterSyntax)
+                if (property.ContainingType.IsRecord && DeclaringSyntax(property) is ParameterSyntax)
                 {
                     return; // a record's positional property: its constructor parameter reports
                 }
 
-                scope.Check(property.Type, DependencyKind.Property, (syntax as BasePropertyDeclarationSyntax)?.Type);
+                if (scope.Find(property.Type) is { } propertyHit)
+                {
+                    scope.Report(propertyHit, DependencyKind.Property,
+                        Locations.Of((DeclaringSyntax(property) as BasePropertyDeclarationSyntax)?.Type, propertyHit.Type));
+                }
+
                 CheckParameters(scope, property.Parameters);
                 break;
             case IEventSymbol @event:
@@ -101,7 +106,7 @@ internal static class DeclarationRules
 
     private static void AnalyzeSignature(Scope scope, IMethodSymbol method)
     {
-        if (!method.ReturnsVoid)
+        if (!method.ReturnsVoid && scope.Find(method.ReturnType) is { } hit)
         {
             var returnType = DeclaringSyntax(method) switch
             {
@@ -112,7 +117,7 @@ internal static class DeclarationRules
                 _ => null,
             };
 
-            scope.Check(method.ReturnType, DependencyKind.ReturnType, returnType);
+            scope.Report(hit, DependencyKind.ReturnType, Locations.Of(returnType, hit.Type));
         }
 
         CheckParameters(scope, method.Parameters);
@@ -123,15 +128,16 @@ internal static class DeclarationRules
     {
         foreach (var parameter in parameters)
         {
-            var syntax = DeclaringSyntax(parameter) as ParameterSyntax;
-
-            // A lambda parameter without a written type is inferred, not a dependency.
-            if (syntax is { Type: null })
+            if (scope.Find(parameter.Type) is { } hit)
             {
-                continue;
+                // A parameter without a written type is inferred, not a dependency.
+                var syntax = DeclaringSyntax(parameter) as ParameterSyntax;
+                if (syntax is not { Type: null })
+                {
+                    scope.Report(hit, DependencyKind.Parameter, Locations.Of(syntax?.Type, hit.Type));
+                }
             }
 
-            scope.Check(parameter.Type, DependencyKind.Parameter, syntax?.Type);
             foreach (var attribute in parameter.GetAttributes())
             {
                 CheckAttribute(scope, attribute);
@@ -160,7 +166,6 @@ internal static class DeclarationRules
 
     private static void CheckAttribute(Scope scope, AttributeData attribute)
     {
-        var syntax = attribute.ApplicationSyntaxReference?.GetSyntax(scope.CancellationToken);
         var hit = scope.Find(attribute.AttributeClass);
         if (hit is null)
         {
@@ -177,7 +182,7 @@ internal static class DeclarationRules
 
         if (hit is not null)
         {
-            scope.Report(hit, DependencyKind.Attribute, Locations.Of(syntax, hit.Type));
+            scope.Report(hit, DependencyKind.Attribute, Locations.Of(attribute.ApplicationSyntaxReference?.GetSyntax(scope.CancellationToken), hit.Type));
         }
     }
 
